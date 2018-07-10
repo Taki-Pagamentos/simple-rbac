@@ -48,6 +48,9 @@ class Registry(object):
         }
         # now remove the role
         del self._roles[role]
+        # ...and just in case it's a denial only role do that too
+        if role in self._denial_only_roles:
+            self._denial_only_roles.remove(role)
 
     def add_resource(self, resource, parents=[]):
         """Add a resource or append parents resources to a special resource.
