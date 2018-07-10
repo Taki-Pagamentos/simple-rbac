@@ -179,7 +179,6 @@ def test_delete_role(acl):
     # rules for 'spy' in _allowed or _denied
     for rule_list in (acl._allowed, acl._denied):
         for rule in rule_list:
-            print(rule)
             assert rule[0] != 'spy'
 
     # nonspy should be unaffected by all this
