@@ -153,3 +153,65 @@ def test_assertion(acl):
 
 def test_is_any_allowed(acl):
     pass  # TODO: create a test
+
+
+def test_delete_role(acl):
+    acl.add_role('nonspy')  # our control who should remain unaffected
+    acl.allow('nonspy', 'view', 'news')
+    acl.deny('nonspy', 'edit', 'news')
+
+    acl.add_role('spy')
+    acl.allow('spy', 'view', 'news')
+    acl.deny('spy', 'edit', 'news')
+    assert acl.is_allowed('spy', 'view', 'news')
+    assert not acl.is_allowed('spy', 'edit', 'news')
+
+    # oh no! we found a spy! remove them!
+    acl.delete_role('spy')
+
+    # as the role no longer exists it should raise an assertion
+    with pytest.raises(AssertionError):
+        assert not acl.is_allowed('spy', 'view', 'news')
+    with pytest.raises(AssertionError):
+        assert not acl.is_allowed('spy', 'edit', 'news')
+
+    # as an extra check let's make sure we don't see any orphaned
+    # rules for 'spy' in _allowed or _denied
+    for rule_list in (acl._allowed, acl._denied):
+        for rule in rule_list:
+            assert rule[0] != 'spy'
+
+    # nonspy should be unaffected by all this
+    assert acl.is_allowed('nonspy', 'view', 'news')
+    assert not acl.is_allowed('nonspy', 'edit', 'news')
+
+
+def test_delete_role_with_child_roles_fails(acl):
+    acl.add_role('nonspy')  # our control who should remain unaffected
+    acl.allow('nonspy', 'view', 'news')
+    acl.deny('nonspy', 'edit', 'news')
+
+    acl.add_role('spy')
+    acl.add_role('childspy', ['spy'])  # should prevent deletion
+    acl.allow('spy', 'view', 'news')
+    acl.deny('spy', 'edit', 'news')
+    assert acl.is_allowed('spy', 'view', 'news')
+    assert not acl.is_allowed('spy', 'edit', 'news')
+
+    # as it has a child role it should assert
+    with pytest.raises(AssertionError):
+        acl.delete_role('spy')
+
+    # nonspy should be unaffected by all this
+    assert acl.is_allowed('nonspy', 'view', 'news')
+    assert not acl.is_allowed('nonspy', 'edit', 'news')
+
+
+def test_delete_role__check_deny_only_roles_also_removed(acl):
+    acl.add_role('spy')
+    acl.deny('spy', 'edit', 'news')  # a deny only role
+    assert not acl.is_allowed('spy', 'edit', 'news')
+    assert 'spy' in acl._denial_only_roles
+    # oh no! we found a spy! remove them!
+    acl.delete_role('spy')
+    assert 'spy' not in acl._denial_only_roles

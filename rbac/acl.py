@@ -37,6 +37,21 @@ class Registry(object):
         if not parents or self._roles_are_deny_only(parents):
             self._denial_only_roles.add(role)
 
+    def delete_role(self, role):
+        assert role not in self._children, 'Cannot delete a role with children'
+        # remove all rules that mention this role
+        self._allowed = {
+            k: v for k, v in self._allowed.items() if k[0] != role
+        }
+        self._denied = {
+            k: v for k, v in self._denied.items() if k[0] != role
+        }
+        # now remove the role
+        del self._roles[role]
+        # ...and just in case it's a denial only role do that too
+        if role in self._denial_only_roles:
+            self._denial_only_roles.remove(role)
+
     def add_resource(self, resource, parents=[]):
         """Add a resource or append parents resources to a special resource.
 
