@@ -5,6 +5,8 @@ import itertools
 
 __all__ = ["Registry"]
 
+RULE_ROLE_NAME_TUPLE_INDEX = 0
+
 
 class Registry(object):
     """The registry of access control list."""
@@ -41,10 +43,10 @@ class Registry(object):
         assert role not in self._children, 'Cannot delete a role with children'
         # remove all rules that mention this role
         self._allowed = {
-            k: v for k, v in self._allowed.items() if k[0] != role
+            k: v for k, v in self._allowed.items() if k[RULE_ROLE_NAME_TUPLE_INDEX] != role
         }
         self._denied = {
-            k: v for k, v in self._denied.items() if k[0] != role
+            k: v for k, v in self._denied.items() if k[RULE_ROLE_NAME_TUPLE_INDEX] != role
         }
         # now remove the role
         del self._roles[role]
