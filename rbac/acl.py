@@ -40,7 +40,7 @@ class Registry(object):
     def delete_role(self, role):
         assert role not in self._children, 'Cannot delete a role with children'
         # can delete children themselves, just not parents
-        
+
         # remove all rules that mention this role
         self._allowed = {
             k: v for k, v in self._allowed.items() if k[0] != role
@@ -49,17 +49,10 @@ class Registry(object):
             k: v for k, v in self._denied.items() if k[0] != role
         }
 
-        pruned_children = {}
-        for parent in self._children:
-            if parent != role:
-                new_children = set()
-                for child in self._children[parent]:
-                    if child != role:
-                        new_children.add(child)
-                if len(new_children) > 0:
-                    pruned_children[parent] = new_children
-
-        self._children = pruned_children
+        self._children = remove_child_role(
+            existing_children=self._children,
+            role_to_remove=role
+        )
 
         # now remove the role
         del self._roles[role]
@@ -177,3 +170,21 @@ def get_parents(all_parents, current):
         yield parent
         for grandparent in get_parents(all_parents, parent):
             yield grandparent
+
+
+def remove_child_role(existing_children, role_to_remove):
+    """
+    Filters a given role from a child roles dictionary,
+    expects dict of parent roles, with sets of children,
+    and returns pruned dictionary copy
+    """
+    pruned_children = {} # start with empty dict, which we'll add too
+    for parent in existing_children:
+        if parent != role_to_remove:
+            new_children = set()
+            for child in existing_children[parent]:
+                if child != role_to_remove:
+                    new_children.add(child)
+            if len(new_children) > 0:
+                pruned_children[parent] = new_children
+    return pruned_children
