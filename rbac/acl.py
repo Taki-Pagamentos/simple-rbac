@@ -39,6 +39,8 @@ class Registry(object):
 
     def delete_role(self, role):
         assert role not in self._children, 'Cannot delete a role with children'
+        # can delete children themselves, just not parents
+        
         # remove all rules that mention this role
         self._allowed = {
             k: v for k, v in self._allowed.items() if k[0] != role
@@ -46,6 +48,19 @@ class Registry(object):
         self._denied = {
             k: v for k, v in self._denied.items() if k[0] != role
         }
+
+        pruned_children = {}
+        for parent in self._children:
+            if parent != role:
+                new_children = set()
+                for child in self._children[parent]:
+                    if child != role:
+                        new_children.add(child)
+                if len(new_children) > 0:
+                    pruned_children[parent] = new_children
+
+        self._children = pruned_children
+
         # now remove the role
         del self._roles[role]
         # ...and just in case it's a denial only role do that too
