@@ -28,11 +28,10 @@ class Registry(object):
         All added roles should be hashable.
         (http://docs.python.org/glossary.html#term-hashable)
         """
-        self._roles.setdefault(role, set())
-        self._roles[role].update(parents)
+
+        add_as_set_item(self._roles, role, parents)
         for p in parents:
-            self._children.setdefault(p, set())
-            self._children[p].add(role)
+            add_as_set_item(self._children, p, role)
 
         # all roles start as deny-only (unless one of its parents
         # isn't deny-only)
@@ -68,8 +67,7 @@ class Registry(object):
         All added resources should be hashable.
         (http://docs.python.org/glossary.html#term-hashable)
         """
-        self._resources.setdefault(resource, set())
-        self._resources[resource].update(parents)
+        add_as_set_item(self._resources, resource, parents)
 
     def allow(self, role, operation, resource, assertion=None):
         """Add a allowed rule.
@@ -156,6 +154,16 @@ class Registry(object):
 
     def _roles_are_deny_only(self, roles):
         return all(r in self._denial_only_roles for r in roles)
+
+
+def add_as_set_item(dictionary, key, item_or_items):
+    """Makes adding to a dictionary of sets a single call"""
+    if key not in dictionary:
+        dictionary[key] = set()
+    if isinstance(item_or_items, list):
+        dictionary[key].update(item_or_items)
+    else:
+        dictionary[key].add(item_or_items)
 
 
 def get_family(all_parents, current):
