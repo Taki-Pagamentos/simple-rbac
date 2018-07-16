@@ -16,27 +16,15 @@ class Registry(object):
         self._resources = {}
         self._allowed = {}
         self._denied = {}
-
-        # to allow additional short circuiting, track roles that only
-        # ever deny access
-        self._denial_only_roles = set()
         self._children = {}
 
     def add_role(self, role, parents=[]):
-        """Add a role or append parents roles to a special role.
-
-        All added roles should be hashable.
-        (http://docs.python.org/glossary.html#term-hashable)
-        """
+        """Add a role or append parents roles to a special role."""
 
         add_as_set_item(self._roles, role, parents)
         for p in parents:
             add_as_set_item(self._children, p, role)
 
-        # all roles start as deny-only (unless one of its parents
-        # isn't deny-only)
-        if not parents or self._roles_are_deny_only(parents):
-            self._denial_only_roles.add(role)
 
     def delete_role(self, role):
         assert role not in self._children, 'Cannot delete a role with children'
@@ -57,16 +45,10 @@ class Registry(object):
 
         # now remove the role
         del self._roles[role]
-        # ...and just in case it's a denial only role do that too
-        if role in self._denial_only_roles:
-            self._denial_only_roles.remove(role)
+
 
     def add_resource(self, resource, parents=[]):
-        """Add a resource or append parents resources to a special resource.
-
-        All added resources should be hashable.
-        (http://docs.python.org/glossary.html#term-hashable)
-        """
+        """Add a resource or append parents resources to a special resource."""
         add_as_set_item(self._resources, resource, parents)
 
     def allow(self, role, operation, resource, assertion=None):
@@ -79,10 +61,6 @@ class Registry(object):
         assert not resource or resource in self._resources
         self._allowed[role, operation, resource] = assertion
 
-        # since we just allowed a permission, role and any children aren't
-        # denied-only
-        for r in itertools.chain([role], get_family(self._children, role)):
-            self._denial_only_roles.discard(r)
 
     def deny(self, role, operation, resource, assertion=None):
         """Add a denied rule.
@@ -134,10 +112,6 @@ class Registry(object):
         """Check the permission with many roles."""
         is_allowed = None  # no matching rules
         for i, role in enumerate(roles):
-            # if access not yet allowed and all remaining roles could
-            # only deny access, short-circuit and return False
-            if not is_allowed and self._roles_are_deny_only(roles[i:]):
-                return False
 
             check_allowed = not is_allowed
 
@@ -152,9 +126,6 @@ class Registry(object):
                 is_allowed = True
         return is_allowed
 
-    def _roles_are_deny_only(self, roles):
-        return all(r in self._denial_only_roles for r in roles)
-
 
 def add_as_set_item(dictionary, key, item_or_items):
     """Makes adding to a dictionary of sets a single call"""
@@ -165,7 +136,6 @@ def add_as_set_item(dictionary, key, item_or_items):
     else:
         dictionary[key].add(item_or_items)
 
-
 def get_family(all_parents, current):
     """Iterate current object and its all parents recursively."""
     yield current
@@ -173,14 +143,12 @@ def get_family(all_parents, current):
         yield parent
     yield None
 
-
 def get_parents(all_parents, current):
     """Iterate current object's all parents."""
     for parent in all_parents.get(current, []):
         yield parent
         for grandparent in get_parents(all_parents, parent):
             yield grandparent
-
 
 def remove_child_role(existing_children, role_to_remove):
     """

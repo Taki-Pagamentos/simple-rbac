@@ -52,31 +52,6 @@ def test_role_evaluation_order_preserved(acl, context, evaluated_roles):
     assert evaluated_roles == roles
 
 
-def test_short_circuit_skip_deny(acl, context, evaluated_roles):
-    """ If no remaining role could grant access, don't bother checking """
-    # track which roles are evaluated
-    setattr(acl, 'is_allowed', _FunctionProxy(acl.is_allowed, evaluated_roles))
-
-    acl.add_resource('the dinosaurs')
-    roles = ['tourist', 'scientist', 'intern']
-    for role in roles:
-        acl.add_role(role)
-    context.set_roles_loader(lambda: roles)
-    # explicitly deny one role and don't allow any permissions to others
-    acl.deny('intern', 'feed', 'the dinosaurs')
-    context.has_permission('feed', 'the dinosaurs')
-
-    # no roles checked, since all are deny-only
-    assert evaluated_roles == []
-
-    acl.allow('scientist', 'study', 'the dinosaurs')
-    context.has_permission('feed', 'the dinosaurs')
-
-    # since scientist is no longer deny-only,
-    # only the intern check will be skipped
-    assert evaluated_roles == ['tourist', 'scientist']
-
-
 def test_short_circuit_skip_allow(acl, context, evaluated_roles):
     """Once one role is passed, shouldn't other roles should not be checked."""
     # track which roles have their assertion function evaluated

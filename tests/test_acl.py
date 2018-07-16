@@ -245,13 +245,3 @@ def test_delete_role_with_child_roles_fails(acl):
     # nonspy should be unaffected by all this
     assert acl.is_allowed('nonspy', 'view', 'news')
     assert not acl.is_allowed('nonspy', 'edit', 'news')
-
-
-def test_delete_role__check_deny_only_roles_also_removed(acl):
-    acl.add_role('spy')
-    acl.deny('spy', 'edit', 'news')  # a deny only role
-    assert not acl.is_allowed('spy', 'edit', 'news')
-    assert 'spy' in acl._denial_only_roles
-    # oh no! we found a spy! remove them!
-    acl.delete_role('spy')
-    assert 'spy' not in acl._denial_only_roles
