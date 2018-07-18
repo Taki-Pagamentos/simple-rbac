@@ -1,0 +1,9 @@
+version: '3.1'
+services:
+
+  tests:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    restart: always
+    command: ./scripts/tests.sh

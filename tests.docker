@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+
+trap ctrl_c INT
+
+function ctrl_c() {
+    docker-compose down
+}
+
+
+docker-compose build tests
+docker-compose run tests
+STATUS=${?}
+docker-compose down
+
+exit ${STATUS}
