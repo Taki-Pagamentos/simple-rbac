@@ -222,9 +222,6 @@ def test_child_role_deletion(acl):
     assert 'unrelated' in str(acl._children)
     assert 'spawn' in str(acl._children)
     
-    
-    
-    
 
 def test_delete_role_with_child_roles_fails(acl):
     acl.add_role('nonspy')  # our control who should remain unaffected
@@ -245,3 +242,26 @@ def test_delete_role_with_child_roles_fails(acl):
     # nonspy should be unaffected by all this
     assert acl.is_allowed('nonspy', 'view', 'news')
     assert not acl.is_allowed('nonspy', 'edit', 'news')
+
+def test_remove_role_from_parent():
+    acl = rbac.acl.Registry()
+
+    # start with a user role, with no subrole
+    acl.add_role('user')
+    roles_before_child_role = dict(acl._roles)
+    children_before_child_role = dict(acl._children)
+
+    # create the subrole and ensure the state differs
+    acl.add_role('activated_user', parents=['user'])
+    children_after_child_role = dict(acl._children)
+    roles_after_child_role = dict(acl._roles)
+    assert children_before_child_role != children_after_child_role
+    assert roles_before_child_role != roles_after_child_role
+
+    #remove the subrole and ensure state is restored to original state
+    acl.remove_role_from_parent(role='activated_user', parent='user')
+    children_after_removing_child_role = dict(acl._children)
+    roles_after_removing_child_role = dict(acl._roles)
+    assert children_after_removing_child_role == children_before_child_role
+    assert roles_after_removing_child_role == roles_before_child_role
+

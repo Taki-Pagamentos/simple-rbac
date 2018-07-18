@@ -36,8 +36,18 @@ class Registry(object):
 
     def remove_role_from_parent(self, role, parent):
         """Removes a child role which has been added to a parent"""
-        # TODO: implement with remove_as_set_item
-        pass
+
+        self._children = remove_set_item_and_empty_dict_items(
+            dictionary=self._children,
+            key=parent,
+            item_to_remove=role
+        )
+
+        self._roles = remove_set_item_and_empty_dict_items(
+            dictionary=self._roles,
+            key=role,
+            item_to_remove=parent
+        )
 
 
     def delete_role(self, role):
@@ -150,7 +160,7 @@ def add_as_set_item(dictionary, key, item_or_items):
     else:
         dictionary[key].add(item_or_items)
 
-def remove_as_set_item(dictionary, key, item_to_remove):
+def remove_set_item_and_empty_dict_items(dictionary, key, item_to_remove):
     """The opposite of add_as_set_item"""
     new_children = set()
     existing_set = dictionary[key]
@@ -163,6 +173,8 @@ def remove_as_set_item(dictionary, key, item_to_remove):
     for word in dictionary:
         new_dictionary[word] = dictionary[word]
     new_dictionary[key] = new_children
+    if len(new_children) == 0:
+        del new_dictionary[key]
 
     return new_dictionary
 
