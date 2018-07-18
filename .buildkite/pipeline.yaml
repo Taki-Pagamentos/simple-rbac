@@ -1,0 +1,8 @@
+
+steps:
+  - label: ':hammer: Tests'
+    branches: "!infra/* master"
+    command: |
+      ./tests.docker
+    agents:
+      queue: 'v3'
