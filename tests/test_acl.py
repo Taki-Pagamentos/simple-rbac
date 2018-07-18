@@ -246,12 +246,12 @@ def test_delete_role_with_child_roles_fails(acl):
 def test_remove_role_from_parent():
     acl = rbac.acl.Registry()
 
-    # start with a user role, with no subrole
+    # start with a user role, with no sub-role
     acl.add_role('user')
     roles_before_child_role = dict(acl._roles)
     children_before_child_role = dict(acl._children)
 
-    # create the subrole and ensure the state differs
+    # create the sub-role and ensure the state differs
     acl.add_role('activated_user', parents=['user'])
     children_after_child_role = dict(acl._children)
     roles_after_child_role = dict(acl._roles)
