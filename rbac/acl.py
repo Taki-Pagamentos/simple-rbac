@@ -73,7 +73,7 @@ class Registry(object):
         add_as_set_item(self._resources, resource, parents)
 
     def allow(self, role, operation, resource, assertion=None):
-        """Add a allowed rule.
+        """Add an allowed rule.
 
         The added rule will allow the role and its all children roles to
         operate the resource.
@@ -81,6 +81,10 @@ class Registry(object):
         assert not role or role in self._roles
         assert not resource or resource in self._resources
         self._allowed[role, operation, resource] = assertion
+
+    def remove_allow(self, role, operation, resource):
+        """Removes an allowed rule"""
+        del self._allowed[role, operation, resource]
 
     def deny(self, role, operation, resource, assertion=None):
         """Add a denied rule.
@@ -91,6 +95,10 @@ class Registry(object):
         assert not role or role in self._roles
         assert not resource or resource in self._resources
         self._denied[role, operation, resource] = assertion
+
+    def remove_deny(self, role, operation, resource):
+        """Removes a denied rule"""
+        del self._denied[role, operation, resource]
 
     def is_allowed(self, role, operation, resource, check_allowed=True,
                    **assertion_kwargs):
