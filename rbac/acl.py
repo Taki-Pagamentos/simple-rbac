@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import itertools
 
-
 __all__ = ["Registry"]
 
 RULE_ROLE_NAME_TUPLE_INDEX = 0
@@ -49,7 +48,6 @@ class Registry(object):
             item_to_remove=parent
         )
 
-
     def delete_role(self, role):
         assert role not in self._children, 'Cannot delete a role with children'
         # can delete children themselves, just not parents
@@ -70,7 +68,6 @@ class Registry(object):
         # now remove the role
         del self._roles[role]
 
-
     def add_resource(self, resource, parents=[]):
         """Add a resource or append parents resources to a special resource."""
         add_as_set_item(self._resources, resource, parents)
@@ -84,7 +81,6 @@ class Registry(object):
         assert not role or role in self._roles
         assert not resource or resource in self._resources
         self._allowed[role, operation, resource] = assertion
-
 
     def deny(self, role, operation, resource, assertion=None):
         """Add a denied rule.
@@ -184,12 +180,14 @@ def get_family(all_parents, current):
         yield parent
     yield None
 
+
 def get_parents(all_parents, current):
     """Iterate current object's all parents."""
     for parent in all_parents.get(current, []):
         yield parent
         for grandparent in get_parents(all_parents, parent):
             yield grandparent
+
 
 def remove_child_role(existing_children, role_to_remove):
     """
@@ -200,7 +198,7 @@ def remove_child_role(existing_children, role_to_remove):
 
     # TODO: consider using remove_as_set_item
 
-    pruned_children = {} # start with empty dict, which we'll add too
+    pruned_children = {}  # start with empty dict, which we'll add too
     for parent in existing_children:
         if parent != role_to_remove:
             new_children = set()
