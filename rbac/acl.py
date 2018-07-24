@@ -164,16 +164,14 @@ def filter_set_item(existing_set, item_to_remove):
 
 def remove_set_item_and_empty_dict_items(dictionary, key, item_to_remove):
     """The opposite of add_as_set_item"""
+    new_dictionary = {k: v for (k, v) in dictionary.items() if k != key}
+
     existing_set = dictionary[key]
     assert isinstance(existing_set, set)
     new_children = filter_set_item(existing_set, item_to_remove)
 
-    new_dictionary = dict()
-    for word in dictionary:
-        new_dictionary[word] = dictionary[word]
-    new_dictionary[key] = new_children
-    if len(new_children) == 0:
-        del new_dictionary[key]
+    if len(new_children) > 0:
+        new_dictionary[key] = new_children
 
     return new_dictionary
 
