@@ -157,11 +157,16 @@ def add_as_set_item(dictionary, key, item_or_items):
         dictionary[key].add(item_or_items)
 
 
+def filter_set_item(existing_set, item_to_remove):
+    filtered_set = set([item for item in existing_set if item != item_to_remove])
+    return filtered_set
+
+
 def remove_set_item_and_empty_dict_items(dictionary, key, item_to_remove):
     """The opposite of add_as_set_item"""
     existing_set = dictionary[key]
     assert isinstance(existing_set, set)
-    new_children = set([child for child in existing_set if child != item_to_remove])
+    new_children = filter_set_item(existing_set, item_to_remove)
 
     new_dictionary = dict()
     for word in dictionary:
@@ -195,16 +200,10 @@ def remove_child_role(existing_children, role_to_remove):
     expects dict of parent roles, with sets of children,
     and returns pruned dictionary copy
     """
-
-    # TODO: consider using remove_as_set_item
-
-    pruned_children = {}  # start with empty dict, which we'll add too
+    pruned_children = {}  # start with empty dict, which we'll add to
     for parent in existing_children:
         if parent != role_to_remove:
-            new_children = set()
-            for child in existing_children[parent]:
-                if child != role_to_remove:
-                    new_children.add(child)
+            new_children = filter_set_item(existing_children[parent], role_to_remove)
             if len(new_children) > 0:
                 pruned_children[parent] = new_children
     return pruned_children
