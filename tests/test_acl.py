@@ -267,27 +267,27 @@ def test_remove_role_from_parent():
 
 
 def test_remove_allow(acl):
-    only_default_allowed = set(acl._allowed)
+    only_default_allowed = dict(acl._allowed)
     acl.allow('writer', 'new', 'news')
-    allowed_after_allowing_writer = set(acl._allowed)
+    allowed_after_allowing_writer = dict(acl._allowed)
     assert only_default_allowed != allowed_after_allowing_writer
     assert acl.is_allowed('writer', 'new', 'news')
 
     acl.remove_allow('writer', 'new', 'news')
-    allowed_after_removing_allowing_writer = set(acl._allowed)
+    allowed_after_removing_allowing_writer = dict(acl._allowed)
     assert allowed_after_removing_allowing_writer == only_default_allowed
     assert not acl.is_allowed('writer', 'new', 'news')
 
 
 def test_remove_deny(acl):
     acl.add_role('spy')
-    only_default_denied = set(acl._denied)
+    only_default_denied = dict(acl._denied)
     acl.deny('spy', 'view', 'news')
-    denied_after_denying_spy = set(acl._denied)
+    denied_after_denying_spy = dict(acl._denied)
     assert only_default_denied != denied_after_denying_spy
     assert not acl.is_allowed('spy', 'view', 'news')
 
     acl.remove_deny('spy', 'view', 'news')
-    denied_after_removing_deny_spy = set(acl._denied)
+    denied_after_removing_deny_spy = dict(acl._denied)
     assert denied_after_removing_deny_spy == only_default_denied
     assert not acl.is_allowed('spy', 'view', 'news')  # this should still not be allowed
