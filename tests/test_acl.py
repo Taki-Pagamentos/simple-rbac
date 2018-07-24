@@ -187,14 +187,13 @@ def test_delete_role(acl):
 
 
 def test_child_role_deletion(acl):
-    
     # create unrelated parent and child
     acl.add_role('unrelated')
     acl.add_role('unrelated', ['spawn'])
     acl.allow('unrelated', 'view', 'news')
     assert 'unrelated' in str(acl._children)
     assert 'spawn' in str(acl._children)
-    
+
     # create parent and child, that we care about
     acl.add_role('daddy')
     acl.allow('daddy', 'view', 'news')
@@ -203,25 +202,25 @@ def test_child_role_deletion(acl):
     assert 'daddy' in str(acl._children)
     assert 'kiddo' in str(acl._children)
     assert acl.is_allowed('kiddo', 'view', 'news')
-    
+
     # ensure we can't delete a father who has a dependent child
     with pytest.raises(AssertionError):
         acl.delete_role('daddy')
-    
+
     # delete child role
     acl.delete_role('kiddo')
     assert 'kiddo' not in str(acl._children)
     assert acl.is_allowed('daddy', 'view', 'news')
-    
+
     # ensure we CAN delete a father with no dependent children
     acl.delete_role('daddy')
     with pytest.raises(AssertionError):
         acl.is_allowed('daddy', 'view', 'news')
-    
+
     # make sure those unrelated father and child remain
     assert 'unrelated' in str(acl._children)
     assert 'spawn' in str(acl._children)
-    
+
 
 def test_delete_role_with_child_roles_fails(acl):
     acl.add_role('nonspy')  # our control who should remain unaffected
@@ -242,6 +241,7 @@ def test_delete_role_with_child_roles_fails(acl):
     # nonspy should be unaffected by all this
     assert acl.is_allowed('nonspy', 'view', 'news')
     assert not acl.is_allowed('nonspy', 'edit', 'news')
+
 
 def test_remove_role_from_parent():
     acl = rbac.acl.Registry()
@@ -290,4 +290,4 @@ def test_remove_deny(acl):
     acl.remove_deny('spy', 'view', 'news')
     denied_after_removing_deny_spy = set(acl._denied)
     assert denied_after_removing_deny_spy == only_default_denied
-    assert not acl.is_allowed('spy', 'view', 'news') # this should still not be allowed
+    assert not acl.is_allowed('spy', 'view', 'news')  # this should still not be allowed
