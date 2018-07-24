@@ -160,14 +160,12 @@ def add_as_set_item(dictionary, key, item_or_items):
     else:
         dictionary[key].add(item_or_items)
 
+
 def remove_set_item_and_empty_dict_items(dictionary, key, item_to_remove):
     """The opposite of add_as_set_item"""
-    new_children = set()
     existing_set = dictionary[key]
     assert isinstance(existing_set, set)
-    for child in existing_set:
-        if child != item_to_remove:
-            new_children.add(child)
+    new_children = set([child for child in existing_set if child != item_to_remove])
 
     new_dictionary = dict()
     for word in dictionary:
