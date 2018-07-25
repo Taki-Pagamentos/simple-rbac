@@ -299,8 +299,7 @@ def test_remove_resource(acl):
     state_before_cat = dict(acl._resources)
     acl.add_resource('cat', ['animal'])
     state_with_cat = dict(acl._resources)
-    assert state_with_cat != state_before_cat # make sure it was added
-
+    assert state_with_cat != state_before_cat  # make sure it was added
 
     acl.remove_resource(resource_to_remove='cat', parent_of_resource='animal')
     state_after_removing_cat = dict(acl._resources)
