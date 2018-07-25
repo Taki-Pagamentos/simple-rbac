@@ -291,3 +291,23 @@ def test_remove_deny(acl):
     denied_after_removing_deny_spy = dict(acl._denied)
     assert denied_after_removing_deny_spy == only_default_denied
     assert not acl.is_allowed('spy', 'view', 'news')  # this should still not be allowed
+
+
+def test_remove_resource(acl):
+    default_resource_state = dict(acl._resources)
+    acl.add_resource('animal')
+    state_before_cat = dict(acl._resources)
+    acl.add_resource('cat', ['animal'])
+    state_with_cat = dict(acl._resources)
+    assert state_with_cat != state_before_cat # make sure it was added
+
+
+    acl.remove_resource(resource_to_remove='cat', parent_of_resource='animal')
+    state_after_removing_cat = dict(acl._resources)
+    assert state_before_cat == state_after_removing_cat
+    # make sure we can remove the more complex resource
+
+    acl.remove_resource(resource_to_remove='animal')
+    state_after_removing_animal = dict(acl._resources)
+    assert state_after_removing_animal == default_resource_state
+    # make sure we can remove the basic resource

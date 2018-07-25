@@ -39,13 +39,13 @@ class Registry(object):
         self._children = remove_set_item_and_empty_dict_items(
             dictionary=self._children,
             key=parent,
-            item_to_remove=role
+            set_item_to_remove=role
         )
 
         self._roles = remove_set_item_and_empty_dict_items(
             dictionary=self._roles,
             key=role,
-            item_to_remove=parent
+            set_item_to_remove=parent
         )
 
     def delete_role(self, role):
@@ -71,6 +71,17 @@ class Registry(object):
     def add_resource(self, resource, parents=[]):
         """Add a resource or append parents resources to a special resource."""
         add_as_set_item(self._resources, resource, parents)
+
+    def remove_resource(self, resource_to_remove, parent_of_resource=None):
+        """Add a resource or append parents resources to a special resource."""
+
+        if parent_of_resource is not None:
+            self._resources[parent_of_resource] = filter_set_item(
+                existing_set=self._resources[parent_of_resource],
+                set_item_to_remove=resource_to_remove
+            )
+
+        del self._resources[resource_to_remove]
 
     def allow(self, role, operation, resource, assertion=None):
         """Add an allowed rule.
@@ -165,18 +176,18 @@ def add_as_set_item(dictionary, key, item_or_items):
         dictionary[key].add(item_or_items)
 
 
-def filter_set_item(existing_set, item_to_remove):
-    filtered_set = set([item for item in existing_set if item != item_to_remove])
+def filter_set_item(existing_set, set_item_to_remove):
+    filtered_set = set([item for item in existing_set if item != set_item_to_remove])
     return filtered_set
 
 
-def remove_set_item_and_empty_dict_items(dictionary, key, item_to_remove):
+def remove_set_item_and_empty_dict_items(dictionary, key, set_item_to_remove):
     """The opposite of add_as_set_item"""
     new_dictionary = {k: v for (k, v) in dictionary.items() if k != key}
 
     existing_set = dictionary[key]
     assert isinstance(existing_set, set)
-    new_children = filter_set_item(existing_set, item_to_remove)
+    new_children = filter_set_item(existing_set, set_item_to_remove)
 
     if len(new_children) > 0:
         new_dictionary[key] = new_children
