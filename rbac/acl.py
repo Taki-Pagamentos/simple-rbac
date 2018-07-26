@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import itertools
 
-
 __all__ = ["Registry"]
 
 RULE_ROLE_NAME_TUPLE_INDEX = 0
@@ -40,15 +39,14 @@ class Registry(object):
         self._children = remove_set_item_and_empty_dict_items(
             dictionary=self._children,
             key=parent,
-            item_to_remove=role
+            set_item_to_remove=role
         )
 
         self._roles = remove_set_item_and_empty_dict_items(
             dictionary=self._roles,
             key=role,
-            item_to_remove=parent
+            set_item_to_remove=parent
         )
-
 
     def delete_role(self, role):
         assert role not in self._children, 'Cannot delete a role with children'
@@ -70,13 +68,23 @@ class Registry(object):
         # now remove the role
         del self._roles[role]
 
-
     def add_resource(self, resource, parents=[]):
         """Add a resource or append parents resources to a special resource."""
         add_as_set_item(self._resources, resource, parents)
 
+    def remove_resource(self, resource_to_remove, parent_of_resource=None):
+        """Add a resource or append parents resources to a special resource."""
+
+        if parent_of_resource is not None:
+            self._resources[parent_of_resource] = filter_set_item(
+                existing_set=self._resources[parent_of_resource],
+                set_item_to_remove=resource_to_remove
+            )
+
+        del self._resources[resource_to_remove]
+
     def allow(self, role, operation, resource, assertion=None):
-        """Add a allowed rule.
+        """Add an allowed rule.
 
         The added rule will allow the role and its all children roles to
         operate the resource.
@@ -85,6 +93,9 @@ class Registry(object):
         assert not resource or resource in self._resources
         self._allowed[role, operation, resource] = assertion
 
+    def remove_allow(self, role, operation, resource):
+        """Removes an allowed rule"""
+        del self._allowed[role, operation, resource]
 
     def deny(self, role, operation, resource, assertion=None):
         """Add a denied rule.
@@ -95,6 +106,10 @@ class Registry(object):
         assert not role or role in self._roles
         assert not resource or resource in self._resources
         self._denied[role, operation, resource] = assertion
+
+    def remove_deny(self, role, operation, resource):
+        """Removes a denied rule"""
+        del self._denied[role, operation, resource]
 
     def is_allowed(self, role, operation, resource, check_allowed=True,
                    **assertion_kwargs):
@@ -160,21 +175,22 @@ def add_as_set_item(dictionary, key, item_or_items):
     else:
         dictionary[key].add(item_or_items)
 
-def remove_set_item_and_empty_dict_items(dictionary, key, item_to_remove):
+
+def filter_set_item(existing_set, set_item_to_remove):
+    filtered_set = set([item for item in existing_set if item != set_item_to_remove])
+    return filtered_set
+
+
+def remove_set_item_and_empty_dict_items(dictionary, key, set_item_to_remove):
     """The opposite of add_as_set_item"""
-    new_children = set()
+    new_dictionary = {k: v for (k, v) in dictionary.items() if k != key}
+
     existing_set = dictionary[key]
     assert isinstance(existing_set, set)
-    for child in existing_set:
-        if child != item_to_remove:
-            new_children.add(child)
+    new_children = filter_set_item(existing_set, set_item_to_remove)
 
-    new_dictionary = dict()
-    for word in dictionary:
-        new_dictionary[word] = dictionary[word]
-    new_dictionary[key] = new_children
-    if len(new_children) == 0:
-        del new_dictionary[key]
+    if len(new_children) > 0:
+        new_dictionary[key] = new_children
 
     return new_dictionary
 
@@ -186,6 +202,7 @@ def get_family(all_parents, current):
         yield parent
     yield None
 
+
 def get_parents(all_parents, current):
     """Iterate current object's all parents."""
     for parent in all_parents.get(current, []):
@@ -193,22 +210,17 @@ def get_parents(all_parents, current):
         for grandparent in get_parents(all_parents, parent):
             yield grandparent
 
+
 def remove_child_role(existing_children, role_to_remove):
     """
     Filters a given role from a child roles dictionary,
     expects dict of parent roles, with sets of children,
     and returns pruned dictionary copy
     """
-
-    # TODO: consider using remove_as_set_item
-
-    pruned_children = {} # start with empty dict, which we'll add too
+    pruned_children = {}  # start with empty dict, which we'll add to
     for parent in existing_children:
         if parent != role_to_remove:
-            new_children = set()
-            for child in existing_children[parent]:
-                if child != role_to_remove:
-                    new_children.add(child)
+            new_children = filter_set_item(existing_children[parent], role_to_remove)
             if len(new_children) > 0:
                 pruned_children[parent] = new_children
     return pruned_children

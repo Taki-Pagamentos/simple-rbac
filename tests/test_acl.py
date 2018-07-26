@@ -187,14 +187,13 @@ def test_delete_role(acl):
 
 
 def test_child_role_deletion(acl):
-    
     # create unrelated parent and child
     acl.add_role('unrelated')
     acl.add_role('unrelated', ['spawn'])
     acl.allow('unrelated', 'view', 'news')
     assert 'unrelated' in str(acl._children)
     assert 'spawn' in str(acl._children)
-    
+
     # create parent and child, that we care about
     acl.add_role('daddy')
     acl.allow('daddy', 'view', 'news')
@@ -203,25 +202,25 @@ def test_child_role_deletion(acl):
     assert 'daddy' in str(acl._children)
     assert 'kiddo' in str(acl._children)
     assert acl.is_allowed('kiddo', 'view', 'news')
-    
+
     # ensure we can't delete a father who has a dependent child
     with pytest.raises(AssertionError):
         acl.delete_role('daddy')
-    
+
     # delete child role
     acl.delete_role('kiddo')
     assert 'kiddo' not in str(acl._children)
     assert acl.is_allowed('daddy', 'view', 'news')
-    
+
     # ensure we CAN delete a father with no dependent children
     acl.delete_role('daddy')
     with pytest.raises(AssertionError):
         acl.is_allowed('daddy', 'view', 'news')
-    
+
     # make sure those unrelated father and child remain
     assert 'unrelated' in str(acl._children)
     assert 'spawn' in str(acl._children)
-    
+
 
 def test_delete_role_with_child_roles_fails(acl):
     acl.add_role('nonspy')  # our control who should remain unaffected
@@ -243,25 +242,71 @@ def test_delete_role_with_child_roles_fails(acl):
     assert acl.is_allowed('nonspy', 'view', 'news')
     assert not acl.is_allowed('nonspy', 'edit', 'news')
 
+
 def test_remove_role_from_parent():
     acl = rbac.acl.Registry()
 
-    # start with a user role, with no subrole
+    # start with a user role, with no sub-role
     acl.add_role('user')
     roles_before_child_role = dict(acl._roles)
     children_before_child_role = dict(acl._children)
 
-    # create the subrole and ensure the state differs
+    # create the sub-role and ensure the state differs
     acl.add_role('activated_user', parents=['user'])
     children_after_child_role = dict(acl._children)
     roles_after_child_role = dict(acl._roles)
     assert children_before_child_role != children_after_child_role
     assert roles_before_child_role != roles_after_child_role
 
-    #remove the subrole and ensure state is restored to original state
+    # remove the subrole and ensure state is restored to original state
     acl.remove_role_from_parent(role='activated_user', parent='user')
     children_after_removing_child_role = dict(acl._children)
     roles_after_removing_child_role = dict(acl._roles)
     assert children_after_removing_child_role == children_before_child_role
     assert roles_after_removing_child_role == roles_before_child_role
 
+
+def test_remove_allow(acl):
+    only_default_allowed = dict(acl._allowed)
+    acl.allow('writer', 'new', 'news')
+    allowed_after_allowing_writer = dict(acl._allowed)
+    assert only_default_allowed != allowed_after_allowing_writer
+    assert acl.is_allowed('writer', 'new', 'news')
+
+    acl.remove_allow('writer', 'new', 'news')
+    allowed_after_removing_allowing_writer = dict(acl._allowed)
+    assert allowed_after_removing_allowing_writer == only_default_allowed
+    assert not acl.is_allowed('writer', 'new', 'news')
+
+
+def test_remove_deny(acl):
+    acl.add_role('spy')
+    only_default_denied = dict(acl._denied)
+    acl.deny('spy', 'view', 'news')
+    denied_after_denying_spy = dict(acl._denied)
+    assert only_default_denied != denied_after_denying_spy
+    assert not acl.is_allowed('spy', 'view', 'news')
+
+    acl.remove_deny('spy', 'view', 'news')
+    denied_after_removing_deny_spy = dict(acl._denied)
+    assert denied_after_removing_deny_spy == only_default_denied
+    assert not acl.is_allowed('spy', 'view', 'news')  # this should still not be allowed
+
+
+def test_remove_resource(acl):
+    default_resource_state = dict(acl._resources)
+    acl.add_resource('animal')
+    state_before_cat = dict(acl._resources)
+    acl.add_resource('cat', ['animal'])
+    state_with_cat = dict(acl._resources)
+    assert state_with_cat != state_before_cat  # make sure it was added
+
+    acl.remove_resource(resource_to_remove='cat', parent_of_resource='animal')
+    state_after_removing_cat = dict(acl._resources)
+    assert state_before_cat == state_after_removing_cat
+    # make sure we can remove the more complex resource
+
+    acl.remove_resource(resource_to_remove='animal')
+    state_after_removing_animal = dict(acl._resources)
+    assert state_after_removing_animal == default_resource_state
+    # make sure we can remove the basic resource
